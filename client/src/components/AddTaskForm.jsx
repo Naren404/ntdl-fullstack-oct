@@ -1,28 +1,35 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
-import { generateRandomId } from "../utility/generateRandomId";
+import { createTask } from "../axios/taskAxios";
 
 const AddTaskForm = (props) => {
-  const { setTaskList } = props
+  const { fetchTasks } = props
   
   const [taskName, setTaskName] = useState("")
   const [taskTime, setTaskTime] = useState("")
 
-  const handleOnSubmit = (e) => {
+  const handleOnSubmit = async (e) => {
     e.preventDefault()
     
     // STEP 1: Build the task object
     const taskObject = {
-      taskName: taskName,
-      taskTime: taskTime,
-      type: "entry",
-      id: generateRandomId(),
+      name: taskName,
+      timeToComplete: taskTime,
+      type: "Entry",
     }
 
-    setTaskList((prevState) => [...prevState, taskObject])
-    // setTaskList([...taskList, taskObject])
-    setTaskName("")
-    setTaskTime("")
+    // STEP 2: Send the api request to create data
+    const response = await createTask(taskObject)
+
+    if(response.status === "success"){
+      alert("Task created!")
+      // Form Reset
+      setTaskName("")
+      setTaskTime("")
+
+      // Fetch the task list again to keep FE in sync with BE
+      fetchTasks()
+    }
   }
 
   // Handle task name input change

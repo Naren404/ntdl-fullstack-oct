@@ -3,42 +3,52 @@ import './App.css'
 import AddTaskForm from './components/AddTaskForm'
 import Header from './components/Header'
 import TaskListItem from './components/TaskLIstItem'
+import { deleteTaskRequest, getTasks, updateTask } from './axios/taskAxios'
 
 function App() {
-  const storedTaskList = JSON.parse(localStorage.getItem("taskList")) || []
-
   // State to store task list
-  const [taskList, setTaskList] = useState(storedTaskList)
+  const [taskList, setTaskList] = useState([])
   console.log("taskList", taskList);
 
-  const entryTypeTask = taskList.filter(item => item.type === "entry")
-  const unwantedTypeTask = taskList.filter(item => item.type === "unwanted")
+  const entryTypeTask = taskList.filter(item => item.type === "Entry")
+  const unwantedTypeTask = taskList.filter(item => item.type === "Unwanted")
 
-  // Function to switch task type
-  const switchTaskType = (taskId) => {
-    const updatedTaskList = taskList.map((task) => {
-      if(task.id === taskId){
-        task.type = task.type === "entry"? "unwanted" : "entry"
-      }
-  
-      return task
-    })
 
-    setTaskList(updatedTaskList)
+  // Function to fetch task
+  const fetchTasks = async() => {
+    const response = await getTasks()
+
+    if(response.status === "success"){
+      setTaskList(response.data)
+    }
   }
 
-  // Function to delte task
-  const deleteTask = (taskId) => {
-    const updatedTaskList = taskList.filter((task) => task.id !== taskId)
+  // Function to switch task type
+  const switchTaskType = async(task) => {
+    const updatedTaskField = task.type === "Entry"? { type: "Unwanted"} : {type: "Entry"}
+      
+    const response = await updateTask(task._id, updatedTaskField)
 
-    setTaskList(updatedTaskList)
+    if(response.status === "success"){
+      fetchTasks()
+    }
+  }
+
+  // Function to delete task
+  const deleteTask = async(taskId) => {
+    const response = await deleteTaskRequest(taskId)
+
+    if(response.status === 'success'){
+      fetchTasks()
+    }
   }
 
   //useEffect hook
   useEffect(()=>{
-    // update local storage when task list is updated
-    localStorage.setItem("taskList", JSON.stringify(taskList))
-  }, [taskList])
+    // Initailize taskList state with data from database
+    // To fetch data using API, we have to send request
+    fetchTasks()
+  }, [])
 
   return (
     <>
@@ -53,7 +63,7 @@ function App() {
             {/* <!--First Column--> */}
             <div className="col border p-4 rounded align-self-center">
               {/* <!--Form to collect user's input i.e task details--> */}
-              <AddTaskForm setTaskList={setTaskList} />
+              <AddTaskForm fetchTasks={fetchTasks} />
             </div>
             {/* <!--Second Column--> */}
             <div className="col border p-4 rounded">
